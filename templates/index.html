@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Meter OCR Pipeline</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <header class="header">
+        <h1>Automated Meter OCR Dashboard</h1>
+        <p class="subtitle">YOLO Detection • Manual Labeling • CNN Digit Recognition</p>
+    </header>
+
+    <div class="grid">
+
+        <!-- YOLO TRAIN -->
+        <section>
+            <h2>YOLO Training</h2>
+            <form id="yoloForm" enctype="multipart/form-data">
+                <label>Dataset YAML</label>
+                <input type="file" name="data_yaml" required>
+                <button type="submit">Start YOLO Training</button>
+            </form>
+        </section>
+
+        <!-- YOLO INFERENCE -->
+        <section>
+            <h2>YOLO Inference</h2>
+            <label>Weights Path</label>
+            <input id="weights" placeholder="yolov8n.pt">
+
+            <label>Image Directory</label>
+            <input id="image_dir" placeholder="cropped_dataset/images">
+
+            <label>Output Directory</label>
+            <input id="output_dir" placeholder="outputs">
+
+            <button onclick="runInference()">Run Inference</button>
+        </section>
+
+        <!-- MANUAL LABEL -->
+        <section>
+            <h2>Manual Digit Labeling</h2>
+
+            <label>Digit Image Directory (Source)</label>
+            <input id="label_dir" placeholder="cropped_dataset/digital/unlabeled">
+
+            <label>Label Output Directory (contains folders 0–9)</label>
+            <input id="label_out_dir" placeholder="cropped_dataset/digital">
+
+            <button onclick="manualLabel()">Start Manual Labeling</button>
+            <p class="hint">Press <b>0–9</b> to label • <b>ESC</b> to exit</p>
+        </section>
+
+        <!-- CNN TRAIN -->
+        <section>
+            <h2>CNN Digit Training (0–9)</h2>
+            <label>Training Dataset</label>
+            <input id="cnn_data_dir" value="cropped_dataset/digital">
+            <button onclick="trainCNN()">Train CNN</button>
+        </section>
+
+        <!-- CNN TEST -->
+        <section class="wide">
+            <h2>CNN Test & Visualization</h2>
+
+            <div class="row">
+                <div>
+                    <label>Model Path</label>
+                    <input id="cnn_model_path" value="digit_inception_best.keras">
+                </div>
+                <div>
+                    <label>Test Directory</label>
+                    <input id="cnn_test_dir" value="cropped_dataset/digital/test">
+                </div>
+            </div>
+
+            <button onclick="runCNNTest()">Run CNN Test</button>
+
+            <div class="image-box">
+                <img src="/static/output/cnn_predictions.png" id="cnnResult">
+            </div>
+        </section>
+
+        <!-- LOGS -->
+        <section class="wide logs">
+            <h2>Live Logs</h2>
+            <pre id="logs"></pre>
+        </section>
+
+    </div>
+</div>
+
+<script>
+/* ---------------- YOLO TRAIN ---------------- */
+document.getElementById("yoloForm").onsubmit = function(e){
+    e.preventDefault();
+    const formData = new FormData(this);
+    fetch("/upload", { method:"POST", body: formData });
+};
+
+/* ---------------- YOLO INFERENCE ---------------- */
+function runInference(){
+    fetch("/run_inference", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+            weights: weights.value,
+            image_dir: image_dir.value,
+            output_dir: output_dir.value
+        })
+    });
+}
+
+/* ---------------- MANUAL LABEL ---------------- */
+function manualLabel(){
+    fetch("/manual_label", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+            img_dir: label_dir.value,
+            label_output_dir: label_out_dir.value
+        })
+    });
+}
+
+/* ---------------- CNN TRAIN ---------------- */
+function trainCNN(){
+    fetch("/train_cnn", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+            data_dir: cnn_data_dir.value
+        })
+    });
+}
+
+/* ---------------- CNN TEST ---------------- */
+function runCNNTest(){
+    fetch("/cnn_test", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+            model_path: cnn_model_path.value,
+            test_dir: cnn_test_dir.value
+        })
+    }).then(() => {
+        setTimeout(() => {
+            document.getElementById("cnnResult").src =
+                "/static/output/cnn_predictions.png?" + new Date().getTime();
+        }, 3000);
+    });
+}
+
+/* ---------------- LOG STREAM ---------------- */
+const logBox = document.getElementById("logs");
+const evtSource = new EventSource("/logs");
+evtSource.onmessage = function(e){
+    logBox.textContent += e.data + "\n";
+    logBox.scrollTop = logBox.scrollHeight;
+};
+</script>
+
+</body>
+</html>
