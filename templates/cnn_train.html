@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Model Training - Rotaries (CNN){% endblock %}
+{% block page_title %}🧠 Train Rotary Reader Model (CNN){% endblock %}
+{% block subtitle %}This module trains the AI to read the digital numbers (Rotaries) correctly. 
+Follow the manual below to start training your dataset.{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+    <!-- Manual Section -->
+    <section class="step-card manual-box" style="flex: 1; min-width: 300px; background: rgba(0, 212, 255, 0.05); border-left: 4px solid var(--primary);">
+        <h3 style="color: var(--primary); margin-top: 0;">📖 How to Train the Model</h3>
+        <ol style="line-height: 1.8; color: var(--text-light); padding-left: 20px;">
+            <li><strong>Prepare your data:</strong> Ensure all your cropped rotary numbers are organized into folders named after their number (e.g., a folder named <code>0</code> containing all '0' images, <code>1</code> for '1' images, up to <code>9</code>).</li>
+            <li><strong>Package it:</strong> Put all those numbered folders inside one main folder (e.g., <code>rotary_dataset</code>).</li>
+            <li><strong>Upload:</strong> Click the upload area below and select the <strong>main folder</strong> you just created.</li>
+            <li><strong>Train:</strong> Click the "Start Deep Learning Training" button. The server will automatically process your images, learn the numbers, and test itself.</li>
+            <li><strong>Wait:</strong> Watch the log console for progress. When it says the training is complete, a result image will appear showing what it learned!</li>
+        </ol>
+        <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom: 0;"><em>Note: The training might take a few minutes depending on your computer speed. Don't close the server while it's running!</em></p>
+    </section>
+
+    <!-- Upload Section -->
+    <section class="step-card" style="flex: 1; min-width: 300px;">
+        <h3 style="margin-top: 0;">🚀 Upload Dataset & Train</h3>
+        <form id="cnnTrainForm" style="margin-top: 15px;">
+            <div class="upload-zone" id="uploadZone" style="border: 2px dashed var(--primary); padding: 30px; text-align: center; border-radius: 10px; cursor: pointer; transition: 0.3s; background: var(--bg-card);">
+                <span style="font-size: 2.5rem;">📂</span>
+                <h4>Select Dataset Folder</h4>
+                <p style="color: var(--text-muted); font-size: 0.9em;">Click to browse your computer and upload</p>
+                <input type="file" id="cnn_dataset" webkitdirectory directory multiple required style="display: none;">
+                <p id="folderNameDisplay" style="color: #10b981; font-weight: bold; margin-top: 10px; display: none;"></p>
+            </div>
+            
+            <button type="submit" id="submitBtn" class="primary-btn" style="width: 100%; margin-top: 20px; font-size: 1.1em; padding: 12px; border-radius: 8px; cursor: pointer; display: none; background: var(--primary); color:#000; border:none; font-weight: bold;">Start Deep Learning Training</button>
+            <div id="loadingIndicator" style="display: none; text-align: center; margin-top: 15px;">
+                <div class="spinner" style="width: 30px; height: 30px; border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                <p style="color: var(--primary); margin-top: 10px;">Training in progress... check logs.</p>
+            </div>
+        </form>
+    </section>
+</div>
+
+<!-- Results Section -->
+<section id="resultSection" class="step-card" style="margin-top: 20px; display: none; text-align: center; background: rgba(16, 185, 129, 0.1);">
+    <h3 style="color: #10b981;">✅ Training Completed Successfully!</h3>
+    <p>Here are some sample predictions from the newly trained model:</p>
+    <div style="background: #fff; padding: 10px; border-radius: 8px; display: inline-block; width: 100%;">
+        <img src="/static/output/cnn_predictions.png" onerror="this.style.display='none'" id="cnnResult" alt="CNN Visual Results" style="width: 100%; height: auto;">
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .upload-zone:hover { background: rgba(0,212,255,0.1) !important; }
+</style>
+<script>
+    const uploadZone = document.getElementById('uploadZone');
+    const inputField = document.getElementById('cnn_dataset');
+    const displayName = document.getElementById('folderNameDisplay');
+    const submitBtn = document.getElementById('submitBtn');
+
+    uploadZone.addEventListener('click', () => inputField.click());
+    
+    inputField.addEventListener('change', function() {
+        if(this.files.length > 0) {
+            displayName.innerText = `Selected ${this.files.length} images from folder.`;
+            displayName.style.display = 'block';
+            submitBtn.style.display = 'inline-block';
+        }
+    });
+
+    document.getElementById('cnnTrainForm').onsubmit = function(e) {
+        e.preventDefault();
+        
+        submitBtn.style.display = "none";
+        document.getElementById('loadingIndicator').style.display = "block";
+        document.getElementById("resultSection").style.display = "none";
+        
+        const fd = createFormData({ dataset: document.getElementById('cnn_dataset').files });
+        
+        fetch("/train_cnn", { method:"POST", body: fd });
+        addLog("Training Module Activated: Uploading images and starting Neural Network compilation...", "info");
+    };
+
+    const originalOnMessage = evtSource.onmessage;
+    evtSource.onmessage = function(e) {
+        if (originalOnMessage) originalOnMessage(e);
+        const msg = e.data.trim();
+        if (msg.includes("CNN visualization saved and testing complete Phase")) {
+            setTimeout(() => {
+                document.getElementById('loadingIndicator').style.display = "none";
+                submitBtn.style.display = "inline-block";
+                
+                const img = document.getElementById("cnnResult");
+                img.src = "/static/output/cnn_predictions.png?" + new Date().getTime();
+                document.getElementById("resultSection").style.display = "block";
+                img.style.display = "block";
+                
+                addLog("CNN Training Complete: Visual results displayed.", "success");
+            }, 1000); 
+        }
+    };
+</script>
+{% endblock %}

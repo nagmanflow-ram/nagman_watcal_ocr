@@ -1,7 +1,27 @@
 # Python cache
 __pycache__/
 **/__pycache__/
+*.pyc
 
-# YOLO / training outputs
+# Temporary or Output Folders
 runs/
-run/
+uploads/
+predicted_images/
+cropped_digits/
+static/output/
+.ipynb_checkpoints/
+
+# Models and weights (generally too large for github)
+*.h5
+*.keras
+*.pt
+*.chk
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/

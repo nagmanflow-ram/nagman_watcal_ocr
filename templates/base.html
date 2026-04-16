@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="container layout-container">
+    <div class="pipeline-view">
+        <header class="header" style="text-align: left; margin-bottom: 30px;">
+            <a href="/dashboard" style="color:var(--primary); font-weight: 600; text-decoration:none; display:inline-block; margin-bottom: 10px;">&larr; Back to Dashboard</a>
+            <h1>{% block page_title %}{% endblock %}</h1>
+            <p class="subtitle" style="font-size: 1.1rem;">{% block subtitle %}{% endblock %}</p>
+        </header>
+
+        <div class="pipeline-track" style="border-left: none; margin-left: 0; padding-left: 0;">
+            <div class="pipeline-step">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <div class="logs-sidebar">
+        <div class="logs-sticky">
+            <h2>📡 Live Activity Status</h2>
+            <div id="logs" class="logs-container" style="height: calc(100vh - 120px);">
+                <div class="log-entry log-info"><span class="log-icon">ℹ️</span> <span class="log-text">System connected and ready.</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function createFormData(params) {
+    const fd = new FormData();
+    for (const [key, files] of Object.entries(params)) {
+        if (!files) continue;
+        if (files instanceof FileList || Array.isArray(files)) {
+            for (let i = 0; i < files.length; i++) fd.append(key, files[i]);
+        } else {
+            fd.append(key, files);
+        }
+    }
+    return fd;
+}
+
+const logBox = document.getElementById("logs");
+const evtSource = new EventSource("/logs");
+
+function getTimeStr() {
+    const now = new Date();
+    return now.getHours().toString().padStart(2, '0') + ':' + 
+           now.getMinutes().toString().padStart(2, '0') + ':' + 
+           now.getSeconds().toString().padStart(2, '0');
+}
+
+function addLog(msg, type="default") {
+    let icon = "💬";
+    let cssClass = "";
+    
+    if (type === "success") { icon = "✅"; cssClass = "log-success"; }
+    else if (type === "info") { icon = "🚀"; cssClass = "log-info"; }
+    else if (type === "action") { icon = "⚡"; cssClass = "log-action"; }
+    else if (type === "epoch") { icon = "📈"; cssClass = "log-epoch"; }
+
+    const div = document.createElement("div");
+    div.className = "log-entry " + cssClass;
+    div.innerHTML = `<span class="log-time">[${getTimeStr()}]</span> <span class="log-icon">${icon}</span> <span class="log-text">${msg}</span>`;
+    
+    logBox.appendChild(div);
+    if (logBox.children.length > 50) logBox.removeChild(logBox.firstChild);
+    logBox.scrollTop = logBox.scrollHeight;
+}
+
+evtSource.onmessage = function(e){
+    const msg = e.data.trim();
+    if(!msg) return;
+    if (msg.includes("ETA:") || msg.includes("step - loss:") || msg.match(/^[=\.\- ]+$/) || msg.includes("Batches:")) return; 
+    const lowerMsg = msg.toLowerCase();
+    if (lowerMsg.includes("complete") || lowerMsg.includes("saved")) addLog(msg, "success");
+    else if (lowerMsg.includes("epoch")) addLog(msg, "epoch");
+    else if (lowerMsg.includes("started") || lowerMsg.includes("phase") || lowerMsg.includes("initiating")) addLog(msg, "info");
+    else if (lowerMsg.includes("labeled") || lowerMsg.includes("processing") || lowerMsg.includes("moved")) addLog(msg, "action");
+    else if (lowerMsg.includes("error") || lowerMsg.includes("failed")) addLog("🚨 " + msg, "default"); 
+    else if (msg.length < 120) addLog(msg, "default");
+};
+
+{% block scripts %}{% endblock %}
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pipeline Dashboard Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, var(--bg-color));
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .blob {
+            position: absolute;
+            width: 400px; height: 400px;
+            background: var(--accent);
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+            z-index: 1;
+        }
+        .blob-1 { top: -100px; left: -100px; }
+        .blob-2 { bottom: -100px; right: -100px; background: #8b5cf6; }
+        
+        .container { z-index: 10; padding: 2rem; max-width: 1100px; width: 100%; text-align: center; }
+        h1 {
+            font-size: 3rem; margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            border-color: var(--accent);
+        }
+        .card-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .card-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .card-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="blob blob-1"></div><div class="blob blob-2"></div>
+    <div class="container">
+        <a href="/" style="color:var(--accent); text-decoration:none; font-weight:600; margin-bottom: 20px; display:inline-block;">&larr; Back to Home</a>
+        <h1>Operations Hub</h1>
+        <p class="subtitle" style="color:var(--text-muted); font-size:1.2rem;">Select a module to perform a specific pipeline operation</p>
+        
+        <div class="cards">
+            <a href="/ui/yolo_train" class="card">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">YOLO Training</div>
+                <div class="card-desc">Step 1: Train YOLO OCR detection models.</div>
+            </a>
+            <a href="/ui/yolo_inference" class="card">
+                <div class="card-icon">⚡</div>
+                <div class="card-title">YOLO Inference</div>
+                <div class="card-desc">Step 2: Auto-crop meter and digit images using YOLO.</div>
+            </a>
+            <a href="/ui/manual_label" class="card">
+                <div class="card-icon">✍️</div>
+                <div class="card-title">Single Digit Sorting</div>
+                <div class="card-desc">Step 3a: Manually categorize single cropped digits via server popup.</div>
+            </a>
+            <a href="/ui/meter_label" class="card">
+                <div class="card-icon">🔢</div>
+                <div class="card-title">Meter Strip Sorting</div>
+                <div class="card-desc">Step 3b: Split and categorize 6-digit panels via server popup.</div>
+            </a>
+            <a href="/ui/cnn_train" class="card">
+                <div class="card-icon">🏗️</div>
+                <div class="card-title">CNN Training</div>
+                <div class="card-desc">Step 4: Train InceptionResNet on digits 0-9.</div>
+            </a>
+            <a href="/ui/cnn_test" class="card">
+                <div class="card-icon">🧪</div>
+                <div class="card-title">CNN Verification</div>
+                <div class="card-desc">Step 5: Test and visualize trained keras models.</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

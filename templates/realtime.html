@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real Time Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .centered-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 70vh;
+            text-align: center;
+        }
+        .spinner {
+            width: 80px; height: 80px;
+            border: 6px solid rgba(255,255,255,0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container container-box">
+        <a href="/" style="color:var(--primary); font-weight: 600; text-decoration:none; display:inline-block; margin-bottom: 20px;">&larr; Back to Home</a>
+        <h1 style="text-align: center;">Real Time Meter Tracker</h1>
+        <p class="subtitle" style="text-align: center; margin-bottom: 20px;">Upload an image locally to get combined model predictions immediately.</p>
+
+        <form id="realtimeForm" class="form-container" style="max-width: 600px; margin: 0 auto; background: var(--bg-card); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            <div class="upload-zone" id="uploadZone" style="border: 2px dashed var(--primary); padding: 40px; text-align: center; border-radius: 10px; cursor: pointer; margin-bottom: 20px; transition: 0.3s; background: rgba(0,212,255,0.05);">
+                <span class="upload-icon" style="font-size: 2.5rem; color: var(--primary);">📥</span>
+                <h3>Drag & Drop Meter Image Here</h3>
+                <p>or click to browse local files</p>
+                <input type="file" id="imageInput" name="image" accept="image/png, image/jpeg, image/jpg" style="display: none;">
+            </div>
+            
+            <div id="previewContainer" style="display: none; text-align: center; margin-bottom: 20px;">
+                <img id="imagePreview" src="" alt="Selected Image" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn primary-btn" style="width: 100%; font-size: 1.1rem; padding: 12px; display: none;">Run Pipeline</button>
+            <div id="loadingIndicator" style="display: none; text-align: center; margin-top: 15px;">
+                <div class="spinner" style="width: 40px; height: 40px; border-width: 4px; margin: 0 auto;"></div>
+                <p style="margin-top: 10px; color: var(--primary);">Models are processing image...</p>
+            </div>
+        </form>
+
+        <div id="resultSection" style="display: none; margin-top: 40px; background: var(--bg-card); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            <h2 style="text-align: center; color: var(--text-light); margin-bottom: 20px;">Tracking Result</h2>
+            
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-bottom: 30px;">
+                <div class="stat-card" style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; flex: 1; min-width: 150px; text-align: center; border-left: 4px solid #10b981;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">Meter Strip</span>
+                    <h3 id="resStrip" style="margin: 10px 0 0 0; font-size: 1.8rem;">-</h3>
+                </div>
+                <div class="stat-card" style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; flex: 1; min-width: 150px; text-align: center; border-left: 4px solid #f59e0b;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase;">Rotaries</span>
+                    <h3 id="resKeras" style="margin: 10px 0 0 0; font-size: 1.8rem;">-</h3>
+                </div>
+                <div class="stat-card" style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; flex: 1; min-width: 150px; text-align: center; border-left: 4px solid var(--primary);">
+                    <span style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold;">Combined Final</span>
+                    <h3 id="resFinal" style="margin: 10px 0 0 0; font-size: 2.2rem; color: var(--primary);">00000.0</h3>
+                </div>
+            </div>
+
+            <h3 style="text-align: center; margin-bottom: 15px;">Visualization Plot</h3>
+            <div style="text-align: center; width: 100%; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; background: #fff;">
+                <img id="resImage" src="" alt="Plot output" style="width: 100%; display: block;">
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const realtimeForm = document.getElementById('realtimeForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultSection = document.getElementById('resultSection');
+
+        uploadZone.addEventListener('click', () => imageInput.click());
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.style.background = 'rgba(0,212,255,0.1)'; });
+        uploadZone.addEventListener('dragleave', (e) => { e.preventDefault(); uploadZone.style.background = 'rgba(0,212,255,0.05)'; });
+        uploadZone.addEventListener('drop', (e) => { e.preventDefault(); uploadZone.style.background = 'rgba(0,212,255,0.05)'; if(e.dataTransfer.files.length) { imageInput.files = e.dataTransfer.files; handleFileSelect(); } });
+        imageInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                    submitBtn.style.display = 'block';
+                }
+                reader.readAsDataURL(imageInput.files[0]);
+            }
+        }
+
+        realtimeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!imageInput.files || imageInput.files.length === 0) return;
+
+            submitBtn.style.display = 'none';
+            loadingIndicator.style.display = 'block';
+            resultSection.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+
+            try {
+                const res = await fetch('/process_realtime', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (res.ok && data.status === 'success') {
+                    document.getElementById('resStrip').innerText = data.strip_reading;
+                    document.getElementById('resKeras').innerText = data.keras_reading;
+                    document.getElementById('resFinal').innerText = data.final_output;
+                    document.getElementById('resImage').src = "data:image/png;base64," + data.image_base64;
+                    resultSection.style.display = 'block';
+                } else {
+                    alert('Error processing image: ' + (data.message || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Connection error');
+            } finally {
+                submitBtn.style.display = 'block';
+                loadingIndicator.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

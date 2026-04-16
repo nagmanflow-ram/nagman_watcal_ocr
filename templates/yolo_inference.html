@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}YOLO Inference{% endblock %}
+{% block page_title %}⚡ YOLO Inference & Cropping{% endblock %}
+{% block subtitle %}Detect and extract meters and individual digits instantly{% endblock %}
+
+{% block content %}
+<section class="step-card">
+    <h2>Upload Inference Parameters</h2>
+    <form id="inferenceForm">
+        <label>Upload Pre-Trained Weights (.pt) - Leave blank for default yolov8n.pt</label>
+        <input type="file" id="infer_weights" accept=".pt">
+
+        <label>Upload Target Images (Select one or multiple images)</label>
+        <input type="file" id="infer_images" accept="image/*" multiple required>
+
+        <button type="submit">Run Inference & Auto-Crop Modules</button>
+    </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+document.getElementById('inferenceForm').onsubmit = function(e) {
+    e.preventDefault();
+    const fd = createFormData({
+        weights: document.getElementById('infer_weights').files[0],
+        images: document.getElementById('infer_images').files
+    });
+    fetch("/run_inference", { method:"POST", body: fd });
+    addLog("Inference Module Activated: Processing files for YOLO extractions...", "info");
+};
+{% endblock %}

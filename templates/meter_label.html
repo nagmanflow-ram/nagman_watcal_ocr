@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Meter Sorting{% endblock %}
+{% block page_title %}🔢 Full Meter Strip Splitting{% endblock %}
+{% block subtitle %}Extract and rapidly categorize 6-digit panels sequentially{% endblock %}
+{% block content %}
+<section class="step-card">
+    <h3 style="color:#e2e8f0; font-size:1.1rem; margin-top:0;">Digit Strip Sorting Host Form</h3>
+    <form id="meterLabelForm" style="display:flex; flex-direction:column; justify-content:space-between; height: 100%;">
+        <div>
+            <label>Upload Unlabeled Meter Panels (Select one or multiple images)</label>
+            <input type="file" id="meter_images" accept="image/*" multiple required>
+        </div>
+        <button type="submit" style="margin-top:auto;">Start Strip Sorting</button>
+    </form>
+    <p class="hint" style="margin-top:20px;">Popups will appear on the server host machine. Press <b>0–9</b> to classify each digit section in strip • <b>ESC</b> to skip/exit.</p>
+</section>
+{% endblock %}
+{% block scripts %}
+document.getElementById('meterLabelForm').onsubmit = function(e) {
+    e.preventDefault();
+    const fd = createFormData({ images: document.getElementById('meter_images').files });
+    fetch("/meter_labelling", { method:"POST", body: fd });
+    addLog("Sending meter strips. Awaiting local host UI categorizer action.", "action");
+};
+{% endblock %}

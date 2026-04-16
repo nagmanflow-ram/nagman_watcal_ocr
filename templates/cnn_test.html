@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}CNN Validation{% endblock %}
+{% block page_title %}🧪 Final Model Verification{% endblock %}
+{% block subtitle %}Test the trained weights and visualize the predictions{% endblock %}
+{% block content %}
+<section class="step-card">
+    <form id="cnnTestForm">
+        <label>Provide Model Weights (.keras) - Leave blank for default / generated best_model.keras</label>
+        <input type="file" id="test_model" accept=".keras,.h5">
+
+        <label>Upload Target Test Images (Select one or multiple images)</label>
+        <input type="file" id="test_images" accept="image/*" multiple required>
+        
+        <button type="submit">Execute Test Protocol & Visualization</button>
+    </form>
+
+    <div class="image-box">
+        <img src="/static/output/cnn_predictions.png" onerror="this.style.display='none'" onload="this.style.display='block'" id="cnnResult" alt="CNN Visual Results" style="margin-top: 25px;">
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+document.getElementById('cnnTestForm').onsubmit = function(e) {
+    e.preventDefault();
+    const fd = createFormData({
+        model: document.getElementById('test_model').files[0],
+        images: document.getElementById('test_images').files
+    });
+    
+    document.getElementById("cnnResult").style.display = "none";
+    
+    fetch("/cnn_test", { method:"POST", body: fd }).then(() => {
+        addLog("Validation Module active. Running tests & predicting output classes...", "info");
+    });
+};
+
+const originalOnMessage = evtSource.onmessage;
+evtSource.onmessage = function(e) {
+    if (originalOnMessage) originalOnMessage(e);
+    const msg = e.data.trim();
+    if (msg.includes("CNN visualization saved and testing complete Phase")) {
+        setTimeout(() => {
+            const img = document.getElementById("cnnResult");
+            img.src = "/static/output/cnn_predictions.png?" + new Date().getTime();
+            img.style.display = "block";
+            addLog("CNN visualization payload ready. Updating dashboard display.", "success");
+        }, 500); 
+    }
+};
+{% endblock %}

@@ -1,7 +1,0 @@
-train: /home/akill_sud/Documents/projects/nagman_callibration/My-First-Project-6/train/images
-val: /home/akill_sud/Documents/projects/nagman_callibration/My-First-Project-6/valid/images
-test: /home/akill_sud/Documents/projects/nagman_callibration/My-First-Project-6/test/images
-
-names:
-  0: meters
-  1: readings
