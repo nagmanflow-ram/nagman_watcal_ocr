@@ -26,7 +26,7 @@
                 <span style="font-size: 2.5rem;">⚙️</span>
                 <h4>Select data.yaml</h4>
                 <p style="color: var(--text-muted); font-size: 0.9em;">Click to browse for the YAML Config file</p>
-                <input type="file" name="data_yaml" id="yolo_yaml" accept=".yaml,.yml" required style="display: none;">
+                <input type="file" name="data_yaml" id="yolo_yaml" required style="display: none;">
                 <p id="yamlNameDisplay" style="color: #10b981; font-weight: bold; margin-top: 10px; display: none;"></p>
             </div>
             
@@ -38,15 +38,14 @@
             </div>
         </form>
     </section>
+    <style>
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .upload-zone:hover { background: rgba(0,212,255,0.1) !important; }
+    </style>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<style>
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    .upload-zone:hover { background: rgba(0,212,255,0.1) !important; }
-</style>
-<script>
     const yoloUploadZone = document.getElementById('yoloUploadZone');
     const yoloInput = document.getElementById('yolo_yaml');
     const yoloDisplayName = document.getElementById('yamlNameDisplay');
@@ -67,7 +66,7 @@
         yoloSubmitBtn.style.display = "none";
         document.getElementById('yoloLoadingIndicator').style.display = "block";
         
-        const formData = new FormData(this);
+        const formData = createFormData({ data_yaml: yoloInput.files });
         fetch("/upload", { method:"POST", body: formData });
         addLog("Initiating YOLO training sequence execution...", "info");
     };
@@ -82,5 +81,4 @@
              addLog("YOLO Detection Training Completed successfully.", "success");
         }
     };
-</script>
 {% endblock %}

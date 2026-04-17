@@ -48,14 +48,13 @@ Follow the manual below to start training your dataset.{% endblock %}
         <img src="/static/output/cnn_predictions.png" onerror="this.style.display='none'" id="cnnResult" alt="CNN Visual Results" style="width: 100%; height: auto;">
     </div>
 </section>
+    <style>
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .upload-zone:hover { background: rgba(0,212,255,0.1) !important; }
+    </style>
 {% endblock %}
 
 {% block scripts %}
-<style>
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    .upload-zone:hover { background: rgba(0,212,255,0.1) !important; }
-</style>
-<script>
     const uploadZone = document.getElementById('uploadZone');
     const inputField = document.getElementById('cnn_dataset');
     const displayName = document.getElementById('folderNameDisplay');
@@ -102,5 +101,4 @@ Follow the manual below to start training your dataset.{% endblock %}
             }, 1000); 
         }
     };
-</script>
 {% endblock %}

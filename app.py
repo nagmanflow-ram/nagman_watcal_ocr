@@ -121,9 +121,9 @@ def realtime():
 # =========================================================
 # REALTIME Tracking CONFIG & MODELS
 # =========================================================
-YOLO_METER_MODEL = "/home/akill-sud/Documents/projects/nagman_callibration/runs/detect/train8/weights/best.pt"
+YOLO_METER_MODEL_FALLBACK = "/home/akill-sud/Documents/projects/nagman_callibration/runs/detect/train8/weights/best.pt"
 YOLO_DIGIT_MODEL = "/home/akill-sud/Downloads/readings.yolov11/train/runs/detect/train3/weights/best.pt"
-KERAS_MODEL = "/home/akill-sud/Documents/projects/yolo_web/rotary_inceptionresnet_best_model.keras"
+KERAS_MODEL_FALLBACK = "/home/akill-sud/Documents/projects/yolo_web/rotary_inceptionresnet_best_model.keras"
 
 KERAS_INDICES = [0, 2, 3]
 STRIP_INDEX = 1
@@ -132,14 +132,37 @@ NUM_DIGITS = 6
 
 realtime_models = {}
 
+def get_latest_yolo():
+    import glob
+    import os
+    models = glob.glob("runs/detect/*/weights/best.pt")
+    if models:
+        return max(models, key=os.path.getmtime)
+    return YOLO_METER_MODEL_FALLBACK
+
+def get_latest_keras():
+    import os
+    local_keras = os.path.join("static", "output", "rotary_inceptionresnet_best_model.keras")
+    if os.path.exists(local_keras):
+        return local_keras
+    return KERAS_MODEL_FALLBACK
+
 def get_realtime_models():
+    latest_yolo = get_latest_yolo()
+    latest_keras = get_latest_keras()
+
+    if realtime_models.get('yolo_path') != latest_yolo or realtime_models.get('keras_path') != latest_keras:
+        realtime_models.clear()
+
     if not realtime_models:
         import torch
         realtime_models['device'] = 0 if torch.cuda.is_available() else "cpu"
-        realtime_models['meter_model'] = YOLO(YOLO_METER_MODEL)
+        realtime_models['meter_model'] = YOLO(latest_yolo)
         realtime_models['digit_model'] = YOLO(YOLO_DIGIT_MODEL)
-        realtime_models['classifier_model'] = load_model(KERAS_MODEL)
-        print("✅ All real-time tracking models loaded")
+        realtime_models['classifier_model'] = load_model(latest_keras)
+        realtime_models['yolo_path'] = latest_yolo
+        realtime_models['keras_path'] = latest_keras
+        print(f"✅ Real-time tracking models mapped live: YOLO[{latest_yolo}] | KERAS[{latest_keras}]")
     return realtime_models
 
 import imutils
@@ -288,7 +311,8 @@ def process_realtime():
             plt.title(strip_preds[i])
             plt.axis("off")
 
-        plt.suptitle(f"Final Output: {final_output}", fontsize=16)
+        visual_final_output = f"{strip_reading}{keras_reading[::-1]}"
+        plt.suptitle(f"Final Output: {visual_final_output}", fontsize=16)
         plt.tight_layout()
 
         # Save to buffer
