@@ -1,6 +1,6 @@
 class OcrResult {
   final String reading;
-  final double confidence;
+  final double? confidence;
   final Duration elapsed;
   final List<String> warnings;
 
